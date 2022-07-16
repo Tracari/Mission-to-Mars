@@ -4,12 +4,32 @@
 # Import Splinter and BeautifulSoup
 from splinter import Browser
 from bs4 import BeautifulSoup as soup
-from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
+import datetime as dt
+from webdriver_manager.chrome import ChromeDriverManager
 
-# Set up splinter
-executable_path = {'executable_path': ChromeDriverManager().install()}
-browser = Browser('chrome', **executable_path, headless=False)
+
+def scrape_all():
+    
+    # Initiate headless driver for deployment: Set up splinter
+    executable_path = {'executable_path': ChromeDriverManager().install()}
+    browser = Browser('chrome', **executable_path, headless=True)
+
+    news_title, news_paragraph = mars_news(browser)
+
+    # Run all scraping functions and store results in a dictionary
+    data = {
+        "news_title": news_title,
+        "news_paragragh": news_paragraph,
+        "featured_image": featured_image(browser),
+        "facts": mars_facts(),
+        "last_modified": dt.datetime.now()}
+
+    # Stop webdriver and return data
+    browser.quit()
+    return data
+
+
 
 def mars_news(browser):
 
@@ -22,7 +42,7 @@ def mars_news(browser):
     browser.is_element_present_by_css('div.list_text', wait_time=1)
 
 
-    # intialize HTML parser: Convert the browser html to a soup object and then quit the browser
+    # Convert the browser html to a soup object and then quit the browser: intialize HTML parser
     html = browser.html
     news_soup = soup(html, 'html.parser')
 
@@ -80,15 +100,18 @@ def mars_facts():
         return None
 
     # Assign columns and set index of dataframe
-     df.columns = ['description', 'Mars', 'Earth']
-     df.set_index('description', inplace=True)
+    df.columns = ['Description', 'Mars', 'Earth']
+    df.set_index('Description', inplace=True)
 
     # Convert DataFrame back to HTML code
-    return df.to_html()
+    return df.to_html(classes="table table-striped")
 
-# End automated browsing session
-browser.quit()
 
+
+if __name__ == "__main__":
+    # If running as script, print scraped data
+    print(scrape_all())
+    
 
 
 
